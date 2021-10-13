@@ -1,4 +1,4 @@
-const mysql = require('mysql')
+const mysql = require('mysql-await')
 const express = require('express')
 
 const app = express()
@@ -14,14 +14,14 @@ let DATABASE = process.env.DATABASE
 let PORT = process.env.PORT
 
 // database connection
-const mysqlConnection = mysql.createConnection({
+    
+const mysqlConnection =  mysql.createConnection({
     host : HOST,
     user: USER,
     password : PASSWORD,
     database : DATABASE,
     port: PORT
 })
-
 
 mysqlConnection.connect((err) => {
     if(!err){
@@ -42,90 +42,66 @@ app.get('/', (req,res) => {
 })
 
 // get all employees data
-app.get('/employees', (req, res) => {
-    mysqlConnection.query("SELECT * FROM testdb.persons", (err, rows, field) => {
-        if(!err){
-            // console.log(field)
-            res.send(rows)
-        }else{
-            console.log(err)
-        }
-    })
-
+app.get('/employees', async(req, res) => {
+    try{
+        const result = await mysqlConnection.awaitQuery("SELECT * FROM testdb.persons")
+        res.status(200).send(result)
+    } catch(error){
+        console.log({error})
+        res.status(500).send(error.message)
+    }
 })
 
 // get employee data by id
 
-app.get('/employee/:id', (req, res) => {
-    mysqlConnection.query("SELECT * FROM testdb.persons WHERE personId = ?", [req.params.id], (err, rows, field) => {
-        if(!err){
-            res.send(rows)
-        }
-        else{
-            console.log(err)
-        }
-    })
+app.get('/employee/:id', async(req, res) => {
+    try{
+        const result = await mysqlConnection.awaitQuery("SELECT * FROM testdb.persons WHERE personId = ?", [req.params.id])
+        res.status(200).send(result)
+    } catch(error){
+        console.log({error})
+        res.status(500).send(error.message)
+    }    
 })
 
 
 // delete employee data by id
 
-app.delete('/employee/:id', (req, res) => {
-
-    let deletedItem;
-    mysqlConnection.query("SELECT * FROM testdb.persons WHERE personId = ?", [req.params.id], (err, rows) => {
-        if(!err){
-            deletedItem = rows
-        }
-    })
-
-    mysqlConnection.query("DELETE FROM testdb.persons WHERE personId = ?", [req.params.id], (err, rows) => {
-        if(!err){
-            res.send(deletedItem)
-        }else{
-            // console.log(err)
-            res.send(err)
-        }
-    })
+app.delete('/employee/:id', async(req, res) => {
+    try{
+       const result = await mysqlConnection.awaitQuery("DELETE FROM testdb.persons WHERE personId = ?", [req.params.id])
+       res.status(200).send(result)
+    } catch(error){
+        console.log({error})
+        res.status(500).send(error.message)
+    }
 })
 
 // insert employee data
 
-app.post('/employee', (req, res) => {
+app.post('/employee', async(req, res) => {
     const body = req.body
-    mysqlConnection.query("INSERT INTO testdb.persons (personId, firstName, city) values(?, ?, ?)", [body.personId, body.firstName, body.city], (err, rows, field) => {
-        if(!err){
-            // return the new added data
-            mysqlConnection.query("SELECT * FROM testdb.persons WHERE personId = ?", [body.personId], (err, rows) => {
-                if(!err){
-                    res.send(rows)
-                }
-            })
-        }
-        else{
-            res.send(err)
-        }
-    })
+    try{
+        const result = await mysqlConnection.awaitQuery("INSERT INTO testdb.persons (personId, firstName, city) values(?, ?, ?)", [body.personId, body.firstName, body.city])
+        res.status(200).send(result)
+    } catch(error){
+        console.log({error})
+        res.status(500).send(error.message)
+    }
 })
 
 // update the employee data
 
-app.put('/employee/:id', (req, res) => {
+app.put('/employee/:id', async(req, res) => {
     const body = req.body, id = req.params.id
-    mysqlConnection.query("UPDATE testdb.persons SET personId = ?, firstName = ?, city = ?  WHERE personId = ?", [body.personId, body.firstName, body.city, id] , (err, rows, field) => {
-        if(!err){
-            // return updated data
-            mysqlConnection.query("SELECT * FROM testdb.persons WHERE personId = ?", [body.personId], (err, rows) => {
-                if(!err){
-                    res.send(rows)
-                }
-            })
-            
-        }
-        else{
-            res.send(err)
-        }
-    })
+    try{
+        const result = await mysqlConnection.awaitQuery("UPDATE testdb.persons SET personId = ?, firstName = ?, city = ?  WHERE personId = ?", [body.personId, body.firstName, body.city, id])
+        res.status(200).send(result)
+    } catch(error){
+        console.log({error})
+        res.status(500).send(error.message)
+    }
+        
 })
 
 
